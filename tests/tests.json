@@ -1,0 +1,105 @@
+[
+  {
+    "name": "Customer completes checkout and receives downloadable tickets automatically",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "automatic payment confirmation",
+      "ticket success screen",
+      "ticket QR display",
+      "branded PDF download",
+      "return to homepage after download",
+      "no manual payment status control"
+    ],
+    "description": "Verifies a customer can complete an M-PESA checkout, see issued tickets without pressing a status button, and return to Discover after downloading.",
+    "steps": [
+      "Open a published event with available paid tickets",
+      "Choose one ticket, enter valid guest details and start M-PESA checkout",
+      "Complete the M-PESA prompt and wait for the automatic confirmation",
+      "Verify the ticket success screen displays the issued ticket and QR code without a Check Payment Status button",
+      "Download the branded PDF"
+    ],
+    "expected": "The ticket success screen appears automatically after confirmed payment. Downloading the PDF returns the customer to the homepage."
+  },
+  {
+    "name": "Failed or cancelled checkout can be retried without issuing unpaid tickets",
+    "viewport": "mobile",
+    "covers": [
+      "failed payment state",
+      "cancelled payment state",
+      "retry checkout",
+      "no ticket issuance for failed payment",
+      "checkout retry guardrail"
+    ],
+    "description": "Verifies a cancelled or failed M-PESA request displays a clear retry option and does not show tickets as paid.",
+    "steps": [
+      "Open a published event with available paid tickets",
+      "Start checkout and cancel the M-PESA prompt without entering a PIN",
+      "Verify a clear payment failure message appears and no ticket is displayed",
+      "Choose Try payment again and complete a new M-PESA prompt"
+    ],
+    "expected": "The cancelled attempt is shown as failed with a retry option. Tickets appear only after a later payment is confirmed."
+  },
+  {
+    "name": "Organizer can configure a mobile payout destination or till number",
+    "viewport": "desktop",
+    "covers": [
+      "organizer payout method selection",
+      "mobile money destination validation",
+      "till number destination validation",
+      "profile persistence"
+    ],
+    "description": "Checks the organizer profile saves exactly one selected payout destination and restores it after revisiting the profile.",
+    "steps": [
+      "Open Organizer profile",
+      "Choose Mobile number and enter a valid M-PESA number, then save",
+      "Switch to Till number and enter a till number, then save",
+      "Reopen the profile and verify the selected method and destination persist"
+    ],
+    "expected": "The selected payout method and its matching destination are saved and displayed; the unselected destination is cleared."
+  },
+  {
+    "name": "Mobile signup form scrolls independently and shows every required field",
+    "viewport": "mobile",
+    "covers": [
+      "mobile signup field visibility",
+      "internal authentication modal scrolling",
+      "signup role selector",
+      "successful signup validation"
+    ],
+    "description": "Verifies a narrow mobile viewport can reach all signup fields and submit the complete customer or organizer registration form without scrolling the page behind it.",
+    "steps": [
+      "Open Create account on a 375 by 667 mobile viewport",
+      "Choose Organizer and scroll inside the signup panel to the bottom",
+      "Verify name, phone, organization, email, password and submit controls are reachable",
+      "Switch to Customer and verify the organization-only field is not required"
+    ],
+    "expected": "The signup panel scrolls internally, all applicable fields remain reachable and the page behind the open panel does not move."
+  },
+  {
+    "name": "Homepage and existing account pages retain the Tubuy Ticket experience",
+    "viewport": "desktop",
+    "covers": [
+      "events-first homepage ordering",
+      "event search and category filters",
+      "responsive event cards",
+      "customer dashboard",
+      "organizer forms and ticket management",
+      "terms page",
+      "event-specific entry scanner",
+      "manual ticket-code validation",
+      "camera QR scanning with rear-camera preference",
+      "duplicate ticket check-in protection",
+      "scanner camera permission fallback",
+      "navy orange cream visual system"
+    ],
+    "description": "Checks the existing event discovery, account, organizer, terms and scanner workflows remain intact after checkout updates.",
+    "steps": [
+      "Open the homepage and search or filter the published event lineup",
+      "Sign in and open the customer ticket dashboard",
+      "Open organizer event creation, ticket categories and profile pages",
+      "Open Terms and conditions and the entry scanner"
+    ],
+    "expected": "Existing event discovery and account workflows remain available and retain the established Tubuy Ticket brand styling."
+  }
+]
