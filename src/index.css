@@ -56,7 +56,7 @@
 
 
 /* Dedicated, shareable event pages */
-.modal-backdrop.event-page-backdrop{position:relative;inset:auto;z-index:1;display:block;min-height:100vh;padding:0;background:#fffefa;backdrop-filter:none;overflow:visible}
+.modal-backdrop.event-page-backdrop{position:fixed;inset:0;z-index:50;display:block;min-height:100vh;padding:0;background:#fffefa;backdrop-filter:none;overflow-y:auto}
 .event-modal.event-page-card{width:100%;max-width:1180px;min-height:100vh;max-height:none;margin:0 auto;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);overflow:visible;box-shadow:none}
 .event-page-card .modal-cover{position:sticky;top:0;height:100vh;min-height:620px;max-height:100vh;object-fit:cover}
 .event-page-card .modal-event-body{max-height:none;min-height:100vh;padding:clamp(28px,5vw,64px);overflow:visible}
