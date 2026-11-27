@@ -1,9 +1,12 @@
-
 {
   "rewrites": [
     {
       "source": "/sitemap.xml",
       "destination": "https://uxhtnxixwusuwnudonyf.supabase.co/functions/v1/tubuy-sitemap"
+    },
+    {
+      "source": "/events/:slug",
+      "destination": "/"
     }
   ]
 }
