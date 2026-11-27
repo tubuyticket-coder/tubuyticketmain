@@ -320,6 +320,13 @@ function App() {
     setBusy(true);setError('');
     try{
       let coverUrl:string|null=null;
+      const baseSlug=slugify(eventForm.name)||'event';
+      let eventSlug=editingEvent ? (myEvents.find(item=>item.id===editingEvent)?.slug||baseSlug) : baseSlug;
+      if(!editingEvent){
+        const {data:slugMatch,error:slugCheckError}=await supabase.from('events').select('id').eq('slug',eventSlug).maybeSingle();
+        if(slugCheckError) throw slugCheckError;
+        if(slugMatch) eventSlug=baseSlug+'-'+Date.now().toString().slice(-6);
+      }
       if(coverFile){
         const ext=coverFile.name.split('.').pop()?.toLowerCase()||'jpg';
         const path=user.id+'/'+Date.now()+'-'+slugify(eventForm.name)+'.'+ext;
@@ -328,7 +335,7 @@ function App() {
         coverUrl=supabase.storage.from('event-media').getPublicUrl(path).data.publicUrl;
       }
       const base={
-        name:eventForm.name.trim(),slug:slugify(eventForm.name)+'-'+Date.now().toString().slice(-6),
+        name:eventForm.name.trim(),slug:eventSlug,
         description:eventForm.description.trim(),category:eventForm.category,
         event_date:eventForm.event_date,start_time:eventForm.start_time,end_time:eventForm.end_time||null,
         venue:eventForm.venue.trim(),town:eventForm.town.trim()||null,county:eventForm.county.trim()||null,
