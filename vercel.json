@@ -17,7 +17,7 @@
     },
     {
       "source": "/events/:slug",
-      "destination": "https://uxhtnxixwusuwnudonyf.supabase.co/functions/v1/tubuy-event-page?slug=:slug"
+      "destination": "/api/event-page?slug=:slug"
     }
   ]
 }
