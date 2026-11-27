@@ -648,7 +648,7 @@ function OrganizerTicketIssuer({events,onIssued,onError}:{events:EventRecord[];o
       setIssued({...data,tickets:visibleTickets.length?visibleTickets:(data.tickets||[]).map((ticket:any)=>({...ticket,ticket_type:selectedType?.name||'Admission',ticket_type_details:selectedType})),delivery});
       onIssued();
       if(deliveryError||delivery.sent<ticketIds.length){
-        onError('Tickets were created successfully, but '+(deliveryError||'some WhatsApp messages could not be sent')+' You can retry delivery from the organizer ticket list.');
+        onError('Tickets were created successfully, but '+(deliveryError||'some WhatsApp messages could not be sent')+' Please contact Tubuy Ticket support to resend them.');
       }
     }catch(err:any){onError(err.message||'Could not issue these tickets.');}
     finally{setBusy(false);}
