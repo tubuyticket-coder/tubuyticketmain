@@ -1,0 +1,190 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+    xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+    <!-- ==========================================
+         TUBUY TICKET - OFFICIAL WEBSITE SITEMAP
+         Domain: https://tubuyticket.com/
+         Country: Kenya
+         ========================================== -->
+
+    <!-- MAIN WEBSITE -->
+    <url>
+        <loc>https://tubuyticket.com/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+
+    <!-- EVENT DISCOVERY -->
+    <url>
+        <loc>https://tubuyticket.com/events</loc>
+        <changefreq>hourly</changefreq>
+        <priority>0.95</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/upcoming-events</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.90</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/popular-events</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.85</priority>
+    </url>
+
+    <!-- EVENT CATEGORIES -->
+    <url>
+        <loc>https://tubuyticket.com/events/music</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/concerts</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/festivals</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/sports</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/business</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.75</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/education</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.75</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/entertainment</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/events/community</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.75</priority>
+    </url>
+
+    <!-- ORGANIZER INFORMATION -->
+    <url>
+        <loc>https://tubuyticket.com/organizers</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/become-an-organizer</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.85</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/host-an-event</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.85</priority>
+    </url>
+
+    <!-- CUSTOMER INFORMATION -->
+    <url>
+        <loc>https://tubuyticket.com/how-it-works</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/how-to-buy-tickets</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.75</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/ticket-verification</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.65</priority>
+    </url>
+
+    <!-- ABOUT AND CONTACT -->
+    <url>
+        <loc>https://tubuyticket.com/about</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/contact</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/help</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/faq</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.75</priority>
+    </url>
+
+    <!-- LEGAL AND TRUST -->
+    <url>
+        <loc>https://tubuyticket.com/terms</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.40</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/privacy-policy</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.40</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/refund-policy</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.50</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/cookie-policy</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.30</priority>
+    </url>
+
+    <!-- BLOG / EVENT GUIDES -->
+    <url>
+        <loc>https://tubuyticket.com/blog</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.75</priority>
+    </url>
+
+    <url>
+        <loc>https://tubuyticket.com/event-guides</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+</urlset>
