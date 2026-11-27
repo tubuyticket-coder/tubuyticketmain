@@ -41,10 +41,10 @@ function EventCard({event,tickets,onOpen}:{event:EventRecord;tickets:TicketType[
   const [imageFailed,setImageFailed] = useState(false);
   const prices = tickets.filter(t=>t.is_enabled && !t.is_sold_out && ticketIsOnSale(t));
   const start = prices.length ? Math.min(...prices.map(t=>Number(t.price))) : null;
-  return <button className="event-card" onClick={()=>onOpen(event)}>
+  return <a className="event-card" href={`/events/${encodeURIComponent(event.slug)}`} onClick={e=>{e.preventDefault();onOpen(event);}}>
     <div className="event-photo">{event.cover_image_url && !imageFailed ? <img src={event.cover_image_url} alt={event.name} onError={()=>setImageFailed(true)}/> : <div className="photo-placeholder"><Ticket size={42}/><span>YOUR NEXT MOMENT</span></div>}<span className="event-tag">{event.category}</span><span className="photo-arrow"><ArrowUpRight size={18}/></span></div>
     <div className="event-info"><div className="event-meta"><CalendarDays size={14}/>{dateLabel(event.event_date)} <i>·</i> {shortTime(event.start_time)}</div><h3>{event.name}</h3><p><MapPin size={14}/>{event.venue}{event.town ? ' · '+event.town : ''}</p><div className="event-price"><strong>{start===null?'Tickets coming soon':'From '+money(start)}</strong><span>Explore <ArrowRight size={15}/></span></div></div>
-  </button>;
+  </a>;
 }
 
 function App() {
@@ -82,6 +82,11 @@ function App() {
   const [bookingLookup,setBookingLookup] = useState<any>(null);
   const [mobileNav,setMobileNav] = useState(false);
   const [staffEvents,setStaffEvents] = useState<EventRecord[]>([]);
+  const eventSlugFromPath = () => {
+    const match = window.location.pathname.match(/^\\/events\\/([^/]+)\\/?$/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
+  const eventPageActive = Boolean(eventSlugFromPath());
 
   const notify = (text:string) => { setMessage(text); setError(''); window.setTimeout(()=>setMessage(''),5000); };
   const fail = (text:string) => { setError(text); setMessage(''); };
@@ -426,15 +431,41 @@ function App() {
   };
 
   useEffect(()=>{
-    const sharedEventId=new URLSearchParams(window.location.search).get('event');
-    if(!sharedEventId||!events.length)return;
-    const sharedEvent=events.find(event=>event.id===sharedEventId);
-    if(sharedEvent)setSelected(sharedEvent);
+    if(!events.length)return;
+    const slug=eventSlugFromPath();
+    const legacyEventId=new URLSearchParams(window.location.search).get('event');
+    const matchedEvent=slug
+      ? events.find(event=>event.slug===slug)
+      : legacyEventId ? events.find(event=>event.id===legacyEventId) : null;
+    if(matchedEvent){
+      setSelected(matchedEvent);
+      if(!slug&&legacyEventId){
+        window.history.replaceState({},'',`/events/${encodeURIComponent(matchedEvent.slug)}`);
+      }
+    } else if(slug){
+      setSelected(null);
+    }
   },[events]);
 
+  useEffect(()=>{
+    const handlePopState=()=>{
+      const slug=eventSlugFromPath();
+      if(!slug){setSelected(null);return;}
+      setSelected(events.find(event=>event.slug===slug)||null);
+    };
+    window.addEventListener('popstate',handlePopState);
+    return ()=>window.removeEventListener('popstate',handlePopState);
+  },[events]);
+
+  const openEvent=(event:EventRecord)=>{
+    window.history.pushState({},'',`/events/${encodeURIComponent(event.slug)}`);
+    setSelected(event);setQuantities({});setCheckout(false);setCheckoutResult(null);setBookingLookup(null);
+    setCustomerForm({name:profile?.full_name||'',email:profile?.email||user?.email||'',phone:profile?.phone||''});
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
   const shareEvent=async(event:EventRecord)=>{
-    const url=new URL(window.location.href);
-    url.searchParams.set('event',event.id);
+    const url=new URL(`/events/${encodeURIComponent(event.slug)}`,window.location.origin);
     const shareUrl=url.toString();
     const shareData={title:event.name,text:`Join me at ${event.name} — ${dateLabel(event.event_date)} at ${event.venue}${event.town?', '+event.town:''}.`,url:shareUrl};
     if(navigator.share){
@@ -447,6 +478,46 @@ function App() {
 
   const eventTickets=selected?tickets.filter(t=>t.event_id===selected.id&&t.is_enabled):[];
   const selectedTotal=eventTickets.reduce((sum,t)=>sum+(quantities[t.id]||0)*Number(t.price),0);
+
+  useEffect(()=>{
+    const description=selected
+      ? `Get tickets for ${selected.name} on Tubuy Ticket. ${selected.description||''} ${selected.venue||''} ${selected.town||''}`.replace(/\\s+/g,' ').trim().slice(0,300)
+      : 'Find your next unforgettable experience with Tubuy Ticket. Discover events and explore tickets across Kenya.';
+    document.title=selected ? `${selected.name} Tickets | ${selected.venue} – Tubuy Ticket` : 'Tubuy Ticket — Events, Tickets & Experiences in Kenya';
+    let descriptionTag=document.querySelector('meta[name="description"]') as HTMLMetaElement|null;
+    if(!descriptionTag){descriptionTag=document.createElement('meta');descriptionTag.name='description';document.head.appendChild(descriptionTag);}
+    descriptionTag.content=description;
+    const canonicalUrl=selected ? `${window.location.origin}/events/${encodeURIComponent(selected.slug)}` : `${window.location.origin}/`;
+    let canonical=document.querySelector('link[rel="canonical"]') as HTMLLinkElement|null;
+    if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.appendChild(canonical);}
+    canonical.href=canonicalUrl;
+    const setMeta=(property:string,content:string)=>{
+      let tag=document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement|null;
+      if(!tag){tag=document.createElement('meta');tag.setAttribute('property',property);document.head.appendChild(tag);}
+      tag.content=content;
+    };
+    setMeta('og:type',selected?'event':'website');
+    setMeta('og:title',selected?`${selected.name} Tickets | Tubuy Ticket`:'Tubuy Ticket — Events, Tickets & Experiences in Kenya');
+    setMeta('og:description',description);
+    setMeta('og:url',canonicalUrl);
+    if(selected?.cover_image_url)setMeta('og:image',selected.cover_image_url);
+    const schemaId='tubuy-event-jsonld';
+    document.getElementById(schemaId)?.remove();
+    if(selected){
+      const schema={
+        '@context':'https://schema.org','@type':'Event',name:selected.name,description:selected.description||undefined,
+        startDate:`${selected.event_date}T${selected.start_time||'00:00:00'}+03:00`,
+        endDate:selected.end_time?`${selected.event_date}T${selected.end_time}+03:00`:undefined,
+        eventStatus:'https://schema.org/EventScheduled',eventAttendanceMode:'https://schema.org/OfflineEventAttendanceMode',
+        image:selected.cover_image_url?[selected.cover_image_url]:undefined,
+        location:{'@type':'Place',name:selected.venue,address:{'@type':'PostalAddress',addressLocality:selected.town||undefined,addressRegion:selected.county||undefined,addressCountry:'KE'}},
+        organizer:selected.organizer_name?{'@type':'Organization',name:selected.organizer_name}:undefined,
+        offers:eventTickets.map(ticket=>({'@type':'Offer',name:ticket.name,price:Number(ticket.price),priceCurrency:'KES',availability:ticket.is_sold_out?'https://schema.org/SoldOut':'https://schema.org/InStock',url:canonicalUrl}))
+      };
+      const script=document.createElement('script');script.id=schemaId;script.type='application/ld+json';script.textContent=JSON.stringify(schema);document.head.appendChild(script);
+    }
+    return ()=>{document.getElementById(schemaId)?.remove();};
+  },[selected,tickets]);
 
   return <div className="app-shell">
     <div className="topline"><span className="top-dot"/> YOUR NEXT GREAT STORY STARTS HERE <i>/</i> DISCOVER EVENTS ACROSS KENYA <span className="topline-contact">SUPPORT <a href="tel:+254716625790">0716 625 790</a></span></div>
@@ -474,7 +545,7 @@ function App() {
       <section className="discover section" id="discover"><div className="section-heading"><div><div className="eyebrow"><span/> THE LINEUP</div><h2>Find your <em>next thing.</em></h2></div><p>Little plans turn into big memories.<br/>Start with what’s happening near you.</p></div>
         <div className="search-tools"><label className="search-box"><Search size={19}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search events, places or moments..."/><kbd>⌕</kbd></label><span className="count-label">{filtered.length} EVENTS</span></div>
         <div className="chips"><button className={category==='All events'?'chip active':'chip'} onClick={()=>setCategory('All events')}>All events</button>{CATEGORIES.map(c=><button key={c} className={category===c?'chip active':'chip'} onClick={()=>setCategory(c)}>{c}</button>)}</div>
-        {loading?<div className="event-grid">{[1,2,3].map(n=><div className="skeleton" key={n}/>)}</div>:filtered.length?<div className="event-grid">{filtered.map(e=><EventCard key={e.id} event={e} tickets={tickets.filter(t=>t.event_id===e.id)} onOpen={e=>{setSelected(e);setQuantities({});setCheckout(false);setCheckoutResult(null);setBookingLookup(null);setCustomerForm({name:profile?.full_name||'',email:profile?.email||user?.email||'',phone:profile?.phone||''});}}/>)}</div>:<div className="empty"><Compass size={30}/><h3>{events.length?'No matching events':'Your next event is on its way.'}</h3><p>{events.length?'Try another search or category.':'There are no published upcoming events at the moment. Check back soon or host the first one.'}</p><button className="primary-button" onClick={()=>openAuth('signup','organizer')}>Create an event <ArrowUpRight size={16}/></button></div>}
+        {loading?<div className="event-grid">{[1,2,3].map(n=><div className="skeleton" key={n}/>)}</div>:filtered.length?<div className="event-grid">{filtered.map(e=><EventCard key={e.id} event={e} tickets={tickets.filter(t=>t.event_id===e.id)} onOpen={openEvent}/>)}</div>:<div className="empty"><Compass size={30}/><h3>{events.length?'No matching events':'Your next event is on its way.'}</h3><p>{events.length?'Try another search or category.':'There are no published upcoming events at the moment. Check back soon or host the first one.'}</p><button className="primary-button" onClick={()=>openAuth('signup','organizer')}>Create an event <ArrowUpRight size={16}/></button></div>}
         <div className="section-foot"><span>SHOWING PUBLISHED EVENTS</span><span>FRESH PLANS, STRAIGHT FROM THE SOURCE ↗</span></div>
       </section>
       <section className="discover-shortcut"><button onClick={()=>setView('terms')}>Terms & conditions <ArrowUpRight size={15}/></button>{user ? <button onClick={()=>organizer?openDashboard('create'):becomeOrganizer()}>Open host workspace <ArrowUpRight size={15}/></button> : <button onClick={()=>openAuth('signup','organizer')}>Create organizer account <ArrowUpRight size={15}/></button>}</section>
@@ -500,7 +571,7 @@ function App() {
 
     {authOpen&&<div className="modal-backdrop" onClick={()=>setAuthOpen(false)}><div className="auth-modal" onClick={e=>e.stopPropagation()}><button className="modal-close" onClick={()=>setAuthOpen(false)}><X/></button><Brand/><div className="eyebrow"><span/> {authMode==='signup'?'JOIN THE GOOD TIMES':'WELCOME BACK'}</div><h2>{authMode==='signup'?'Create your account':'Sign in to Tubuy'}</h2><p>One account for discovering events, managing tickets and hosting experiences.</p><div className="auth-switch"><button className={authMode==='signin'?'active':''} onClick={()=>setAuthMode('signin')}>Sign in</button><button className={authMode==='signup'?'active':''} onClick={()=>setAuthMode('signup')}>Create account</button></div><form onSubmit={submitAuth}>{authMode==='signup'&&<div className="role-switch"><button type="button" className={accountType==='customer'?'active':''} onClick={()=>setAccountType('customer')}><User size={16}/> Customer</button><button type="button" className={accountType==='organizer'?'active':''} onClick={()=>setAccountType('organizer')}><CalendarDays size={16}/> Organizer</button></div>}{authMode==='signup'&&<><Field label="Full name"><input required value={authForm.name} onChange={e=>setAuthForm({...authForm,name:e.target.value})} placeholder="Your full name"/></Field><Field label="Phone number"><input required value={authForm.phone} onChange={e=>setAuthForm({...authForm,phone:e.target.value})} placeholder="07xx xxx xxx"/></Field>{accountType==='organizer'&&<Field label="Organization / brand name"><input required value={authForm.organization} onChange={e=>setAuthForm({...authForm,organization:e.target.value})} placeholder="Your event brand or company"/></Field>}</>}<Field label="Email address"><input required type="email" value={authForm.email} onChange={e=>setAuthForm({...authForm,email:e.target.value})} placeholder="you@example.com"/></Field><Field label="Password"><input required type="password" minLength={8} value={authForm.password} onChange={e=>setAuthForm({...authForm,password:e.target.value})} placeholder="At least 8 characters"/></Field><button className="primary-button full" disabled={busy}>{busy?'Please wait…':authMode==='signup'?'Create account':'Sign in'} <ArrowRight size={16}/></button></form><small className="legal-note">By continuing, you agree to use Tubuy Ticket responsibly. Account verification may be required.</small></div></div>}
 
-    {selected&&<div className="modal-backdrop" onClick={()=>{if(!paymentWaiting)setSelected(null);}}><div className="event-modal" onClick={e=>e.stopPropagation()}><button className="modal-close" disabled={paymentWaiting} onClick={()=>setSelected(null)}><X/></button>{selected.cover_image_url?<img className="modal-cover" src={selected.cover_image_url} alt={selected.name}/>:<div className="modal-cover modal-cover-empty"><Ticket size={46}/></div>}<div className="modal-event-body">{paymentWaiting&&<div className="payment-waiting-overlay" role="status" aria-live="polite"><div className="payment-waiting-card"><div className="payment-orbit"><span/><span/><span/><Ticket size={27}/></div><div className="eyebrow"><span/> SECURE M-PESA CHECKOUT</div><h3>Waiting for your <em>payment.</em></h3><p>{paymentWaitingMessage}</p><div className="payment-progress"><span/></div><small>Keep this window open. Do not submit another payment.</small></div></div>}<div className="eyebrow"><span/> {selected.category}</div><h2>{selected.name}</h2><div className="event-details"><span><CalendarDays/>{dateLabel(selected.event_date)} · {shortTime(selected.start_time)}</span><span><MapPin/>{selected.venue}{selected.town?', '+selected.town:''}</span>{selected.organizer_name&&<span><Users/>{selected.organizer_name}</span>}</div><button className="outline-button event-share-button" onClick={()=>void shareEvent(selected)}><Share2 size={15}/> Share event</button><p className="event-description">{selected.description||'Join us for this experience. See you there!'}</p>{(selected as any).location_description&&<p className="event-description"><b>Directions:</b> {(selected as any).location_description}</p>}{(selected as any).terms&&<details><summary>Entry terms & conditions</summary><p>{(selected as any).terms}</p></details>}<div className="ticket-options"><h3>Choose your tickets</h3>{eventTickets.length?eventTickets.map(t=><div className="ticket-option" key={t.id}><div><b>{t.name}</b><small>{t.description||'Event admission'} · {Math.max(0,t.quantity_total-t.quantity_sold-t.quantity_reserved)} left · {ticketSaleLabel(t)}</small><strong>{money(t.price)}</strong></div><div className="quantity-control"><button onClick={()=>setQuantities(q=>({...q,[t.id]:Math.max(0,(q[t.id]||0)-1)}))}><Minus size={14}/></button><b>{quantities[t.id]||0}</b><button disabled={!ticketIsOnSale(t)||t.is_sold_out||t.quantity_sold+t.quantity_reserved>=t.quantity_total} onClick={()=>setQuantities(q=>({...q,[t.id]:Math.min(t.max_per_customer,(q[t.id]||0)+1)}))}><Plus size={14}/></button></div></div>):<p className="muted">Ticket categories will be available soon.</p>}</div>{eventTickets.length>0&&<div className="checkout-area"><div className="checkout-total"><span>Selected tickets</span><b>{money(selectedTotal)}</b></div>{!checkout?<button className="primary-button full" disabled={selectedTotal<=0} onClick={()=>setCheckout(true)}>Continue to checkout <ArrowRight size={16}/></button>:<><h3>Guest details</h3><div className="form-grid"><Field label="Full name"><input value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})} placeholder="Ticket holder name"/></Field><Field label="Email"><input type="email" value={customerForm.email} onChange={e=>setCustomerForm({...customerForm,email:e.target.value})} placeholder="Email for booking"/></Field><Field label="M-PESA phone"><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})} placeholder="0716 625 790"/></Field></div><button className="primary-button full" onClick={startCheckout} disabled={busy}>{busy?'Starting payment…':checkoutResult?.status==='failed'?'Try payment again':'Pay with M-PESA'} <ArrowRight size={16}/></button><small className="legal-note">You will receive an M-PESA prompt on your phone if the payment service is configured.</small></>}{checkoutResult&&<div className="payment-result"><b>{['completed','complete','success','successful','confirmed'].includes(String(checkoutResult.status||checkoutResult.payment_status||checkoutResult.data?.status||checkoutResult.data?.payment_status||'').toLowerCase())?'Payment successful': ['failed','cancelled','canceled','rejected','declined'].includes(String(checkoutResult.status||checkoutResult.payment_status||checkoutResult.data?.status||checkoutResult.data?.payment_status||'').toLowerCase())?'Payment failed':'Payment pending'}</b><p>{checkoutResult.message||'The payment provider is processing your request.'}{(checkoutResult.booking_reference||checkoutResult.data?.booking_reference)&&<> Booking reference: <strong>{checkoutResult.booking_reference||checkoutResult.data?.booking_reference}</strong></>}</p></div>}{bookingLookup?.tickets&&<div className="ticket-issued"><b className="ticket-success-title">Payment verified · your tickets are ready</b><div className="ticket-confetti" aria-hidden="true">✦ ✧ ✦</div>{bookingLookup.tickets.map((t:any)=><TicketCard key={t.ticket_code} ticket={t} event={bookingLookup.event||selected} customerName={bookingLookup.booking?.customer_name||customerForm.name}/>)}</div>}</div>}</div></div></div>}
+    {selected&&<div className={eventPageActive?'modal-backdrop event-page-backdrop':'modal-backdrop'} onClick={()=>{if(!paymentWaiting&&!eventPageActive)setSelected(null);}}><div className={eventPageActive?'event-modal event-page-card':'event-modal'} onClick={e=>e.stopPropagation()}><button className="modal-close" disabled={paymentWaiting} aria-label={eventPageActive?'Back to events':'Close event'} onClick={()=>{if(eventPageActive){window.history.pushState({},'','/');setSelected(null);}else setSelected(null);}}><X/></button>{selected.cover_image_url?<img className="modal-cover" src={selected.cover_image_url} alt={selected.name}/>:<div className="modal-cover modal-cover-empty"><Ticket size={46}/></div>}<div className="modal-event-body">{paymentWaiting&&<div className="payment-waiting-overlay" role="status" aria-live="polite"><div className="payment-waiting-card"><div className="payment-orbit"><span/><span/><span/><Ticket size={27}/></div><div className="eyebrow"><span/> SECURE M-PESA CHECKOUT</div><h3>Waiting for your <em>payment.</em></h3><p>{paymentWaitingMessage}</p><div className="payment-progress"><span/></div><small>Keep this window open. Do not submit another payment.</small></div></div>}<div className="eyebrow"><span/> {selected.category}</div><h2>{selected.name}</h2><div className="event-details"><span><CalendarDays/>{dateLabel(selected.event_date)} · {shortTime(selected.start_time)}</span><span><MapPin/>{selected.venue}{selected.town?', '+selected.town:''}</span>{selected.organizer_name&&<span><Users/>{selected.organizer_name}</span>}</div><button className="outline-button event-share-button" onClick={()=>void shareEvent(selected)}><Share2 size={15}/> Share event</button><p className="event-description">{selected.description||'Join us for this experience. See you there!'}</p>{(selected as any).location_description&&<p className="event-description"><b>Directions:</b> {(selected as any).location_description}</p>}{(selected as any).terms&&<details><summary>Entry terms & conditions</summary><p>{(selected as any).terms}</p></details>}<div className="ticket-options"><h3>Choose your tickets</h3>{eventTickets.length?eventTickets.map(t=><div className="ticket-option" key={t.id}><div><b>{t.name}</b><small>{t.description||'Event admission'} · {Math.max(0,t.quantity_total-t.quantity_sold-t.quantity_reserved)} left · {ticketSaleLabel(t)}</small><strong>{money(t.price)}</strong></div><div className="quantity-control"><button onClick={()=>setQuantities(q=>({...q,[t.id]:Math.max(0,(q[t.id]||0)-1)}))}><Minus size={14}/></button><b>{quantities[t.id]||0}</b><button disabled={!ticketIsOnSale(t)||t.is_sold_out||t.quantity_sold+t.quantity_reserved>=t.quantity_total} onClick={()=>setQuantities(q=>({...q,[t.id]:Math.min(t.max_per_customer,(q[t.id]||0)+1)}))}><Plus size={14}/></button></div></div>):<p className="muted">Ticket categories will be available soon.</p>}</div>{eventTickets.length>0&&<div className="checkout-area"><div className="checkout-total"><span>Selected tickets</span><b>{money(selectedTotal)}</b></div>{!checkout?<button className="primary-button full" disabled={selectedTotal<=0} onClick={()=>setCheckout(true)}>Continue to checkout <ArrowRight size={16}/></button>:<><h3>Guest details</h3><div className="form-grid"><Field label="Full name"><input value={customerForm.name} onChange={e=>setCustomerForm({...customerForm,name:e.target.value})} placeholder="Ticket holder name"/></Field><Field label="Email"><input type="email" value={customerForm.email} onChange={e=>setCustomerForm({...customerForm,email:e.target.value})} placeholder="Email for booking"/></Field><Field label="M-PESA phone"><input value={customerForm.phone} onChange={e=>setCustomerForm({...customerForm,phone:e.target.value})} placeholder="0716 625 790"/></Field></div><button className="primary-button full" onClick={startCheckout} disabled={busy}>{busy?'Starting payment…':checkoutResult?.status==='failed'?'Try payment again':'Pay with M-PESA'} <ArrowRight size={16}/></button><small className="legal-note">You will receive an M-PESA prompt on your phone if the payment service is configured.</small></>}{checkoutResult&&<div className="payment-result"><b>{['completed','complete','success','successful','confirmed'].includes(String(checkoutResult.status||checkoutResult.payment_status||checkoutResult.data?.status||checkoutResult.data?.payment_status||'').toLowerCase())?'Payment successful': ['failed','cancelled','canceled','rejected','declined'].includes(String(checkoutResult.status||checkoutResult.payment_status||checkoutResult.data?.status||checkoutResult.data?.payment_status||'').toLowerCase())?'Payment failed':'Payment pending'}</b><p>{checkoutResult.message||'The payment provider is processing your request.'}{(checkoutResult.booking_reference||checkoutResult.data?.booking_reference)&&<> Booking reference: <strong>{checkoutResult.booking_reference||checkoutResult.data?.booking_reference}</strong></>}</p></div>}{bookingLookup?.tickets&&<div className="ticket-issued"><b className="ticket-success-title">Payment verified · your tickets are ready</b><div className="ticket-confetti" aria-hidden="true">✦ ✧ ✦</div>{bookingLookup.tickets.map((t:any)=><TicketCard key={t.ticket_code} ticket={t} event={bookingLookup.event||selected} customerName={bookingLookup.booking?.customer_name||customerForm.name}/>)}</div>}</div>}</div></div></div>}
 
   </div>;
 }
