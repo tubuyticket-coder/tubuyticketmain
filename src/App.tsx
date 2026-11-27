@@ -635,8 +635,21 @@ function OrganizerTicketIssuer({events,onIssued,onError}:{events:EventRecord[];o
         : {data:[],error:null};
       if(ticketReadError) throw ticketReadError;
       const visibleTickets=(createdTickets||[]).map((ticket:any)=>({...ticket,ticket_type:selectedType?.name||'Admission',ticket_type_details:selectedType}));
-      setIssued({...data,tickets:visibleTickets.length?visibleTickets:(data.tickets||[]).map((ticket:any)=>({...ticket,ticket_type:selectedType?.name||'Admission',ticket_type_details:selectedType}))});
+      const ticketIds=(createdTickets||[]).map((ticket:any)=>ticket.id).filter(Boolean);
+      let delivery:any={ok:false,sent:0,total:ticketIds.length};
+      let deliveryError:string|null=null;
+      if(ticketIds.length){
+        const {data:deliveryData,error:sendError}=await supabase.functions.invoke('ticket-created-ultramsg',{
+          body:{action:'deliver_organizer_tickets',ticket_ids:ticketIds}
+        });
+        if(sendError){deliveryError=sendError.message||'WhatsApp delivery could not be started.';}
+        else {delivery=deliveryData||delivery;}
+      }
+      setIssued({...data,tickets:visibleTickets.length?visibleTickets:(data.tickets||[]).map((ticket:any)=>({...ticket,ticket_type:selectedType?.name||'Admission',ticket_type_details:selectedType})),delivery});
       onIssued();
+      if(deliveryError||delivery.sent<ticketIds.length){
+        onError('Tickets were created successfully, but '+(deliveryError||'some WhatsApp messages could not be sent')+' You can retry delivery from the organizer ticket list.');
+      }
     }catch(err:any){onError(err.message||'Could not issue these tickets.');}
     finally{setBusy(false);}
   };
