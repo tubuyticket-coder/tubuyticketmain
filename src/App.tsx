@@ -83,7 +83,7 @@ function App() {
   const [mobileNav,setMobileNav] = useState(false);
   const [staffEvents,setStaffEvents] = useState<EventRecord[]>([]);
   const eventSlugFromPath = () => {
-    const match = window.location.pathname.match(/^\\/events\\/([^/]+)\\/?$/);
+    const match = window.location.pathname.match(/^\/events\/([^/]+)\/?$/);
     return match ? decodeURIComponent(match[1]) : null;
   };
   const eventPageActive = Boolean(eventSlugFromPath());
